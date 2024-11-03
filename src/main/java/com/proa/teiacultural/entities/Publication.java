@@ -22,6 +22,10 @@ public class Publication {
     private User user;
 
     private String content;
+    private String imageUrl1;
+    private String imageUrl2;
+    private String imageUrl3;
+    private String imageUrl4;
 
     @CreationTimestamp
     private Instant creationTimestamp;

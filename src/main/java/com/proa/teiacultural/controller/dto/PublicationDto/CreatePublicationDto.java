@@ -1,4 +1,4 @@
-package com.proa.teiacultural.controller.dto;
+package com.proa.teiacultural.controller.dto.PublicationDto;
 
 public record CreatePublicationDto(
         String content,

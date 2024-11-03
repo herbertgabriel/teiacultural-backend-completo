@@ -35,9 +35,19 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        // FEACTURE requestMatchers(HttpMethod.POST, "/feed").permitAll()
+        // requestMatchers(HttpMethod.METODO , "/").permitAll()
         http
                 .authorizeHttpRequests(authorize -> authorize
+                        .requestMatchers(HttpMethod.GET, "/feed").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/feed/filter/username/{username}").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/feed/filter/category/{category}").permitAll()
+
+                        .requestMatchers(HttpMethod.GET, "/users/category/{category}").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/users/username/{username}").permitAll()
+
+                        .requestMatchers(HttpMethod.GET, "/profile/username/{username}").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/profile/publications/{username}").permitAll()
+
                         .requestMatchers(HttpMethod.POST, "/users").permitAll()
                         .requestMatchers(HttpMethod.POST, "/login").permitAll()
                         .anyRequest().authenticated())
