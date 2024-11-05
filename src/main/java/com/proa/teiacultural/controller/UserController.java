@@ -1,11 +1,13 @@
 package com.proa.teiacultural.controller;
 
 import com.proa.teiacultural.controller.dto.UserDto.*;
+import com.proa.teiacultural.entities.Publication;
 import com.proa.teiacultural.entities.Role;
 import com.proa.teiacultural.entities.User;
 import com.proa.teiacultural.repository.PublicationRepository;
 import com.proa.teiacultural.repository.RoleRepository;
 import com.proa.teiacultural.repository.UserRepository;
+import com.proa.teiacultural.services.StoreFileService;
 import jakarta.transaction.Transactional;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -13,6 +15,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
@@ -26,12 +29,14 @@ public class UserController {
     private final RoleRepository roleRepository;
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
     private final PublicationRepository publicationRepository;
+    private final StoreFileService storeFileService;
 
-    public UserController(UserRepository userRepository, RoleRepository roleRepository, BCryptPasswordEncoder bCryptPasswordEncoder, PublicationRepository publicationRepository) {
+    public UserController(UserRepository userRepository, RoleRepository roleRepository, BCryptPasswordEncoder bCryptPasswordEncoder, PublicationRepository publicationRepository, StoreFileService storeFileService) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.bCryptPasswordEncoder = bCryptPasswordEncoder;
         this.publicationRepository = publicationRepository;
+        this.storeFileService = storeFileService;
     }
 
     // SCOPE BASIC
@@ -152,8 +157,14 @@ public class UserController {
     }
 
     @Transactional
-    @PatchMapping("/users/add-premium-details")
-    public ResponseEntity<Void> updatePremiumDetailsAuthenticatedUser(Authentication authentication, @RequestBody UpdatePremiumDetailsDto dto) {
+    @PatchMapping(value = "/users/add-premium-details", consumes = {"multipart/form-data"})
+    public ResponseEntity<Void> updatePremiumDetailsAuthenticatedUser(Authentication authentication,
+                                                                      @RequestParam(value = "professionalName", required = false) String professionalName,
+                                                                      @RequestParam(value = "category", required = false) String category,
+                                                                      @RequestParam(value = "aboutMe", required = false) String aboutMe,
+                                                                      @RequestParam(value = "socialMedia", required = false) String socialMedia,
+                                                                      @RequestParam(value = "localization", required = false) String localization,
+                                                                      @RequestParam(value = "profilePicture", required = false) MultipartFile profilePicture) {
         var userId = UUID.fromString(authentication.getName());
         var user = userRepository.findById(userId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
@@ -161,29 +172,32 @@ public class UserController {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "User does not have PREMIUM role");
         }
 
-
-        if (dto.professionalName() != null) {
-            user.setProfessionalName(dto.professionalName());
+        if (professionalName != null) {
+            user.setProfessionalName(professionalName);
         }
-        if (dto.category() != null) {
-            user.setCategory(dto.category());
+        if (category != null) {
+            user.setCategory(category);
         }
-        if (dto.aboutMe() != null) {
-            user.setAboutMe(dto.aboutMe());
+        if (aboutMe != null) {
+            user.setAboutMe(aboutMe);
         }
-        if (dto.socialMedia() != null) {
-            user.setSocialMedia(dto.socialMedia());
+        if (socialMedia != null) {
+            user.setSocialMedia(socialMedia);
         }
-        if (dto.localization() != null) {
-            user.setLocalization(dto.localization());
+        if (localization != null) {
+            user.setLocalization(localization);
         }
-        if (dto.profilePicture() != null) {
-            user.setProfilePicture(dto.profilePicture());
+        if (profilePicture != null && !profilePicture.isEmpty() && isValidImageType(profilePicture.getContentType())) {
+            user.setProfilePicture(storeFileService.uploadFile(profilePicture, user.getUsername() + "/profile", UUID.randomUUID().toString()));
         }
 
         userRepository.save(user);
 
         return ResponseEntity.ok().build();
+    }
+
+    private boolean isValidImageType(String contentType) {
+        return contentType.equals("image/png") || contentType.equals("image/jpeg") || contentType.equals("image/svg+xml");
     }
 
     // SCOPE ADMIN
@@ -253,29 +267,34 @@ public class UserController {
     }
 
     @Transactional
-    @PatchMapping("/users/{id}/add-premium-details")
+    @PatchMapping(value = "/users/{id}/add-premium-details", consumes = {"multipart/form-data"})
     @PreAuthorize("hasAuthority('SCOPE_admin')")
-    public ResponseEntity<Void> addPremiumDetails(@PathVariable UUID id, @RequestBody CreatePremiumDetailsDto dto) {
+    public ResponseEntity<Void> addPremiumDetails(@PathVariable UUID id,
+                                                  @RequestParam(value = "professionalName", required = false) String professionalName,
+                                                  @RequestParam(value = "category", required = false) String category,
+                                                  @RequestParam(value = "aboutMe", required = false) String aboutMe,
+                                                  @RequestParam(value = "socialMedia", required = false) String socialMedia,
+                                                  @RequestParam(value = "localization", required = false) String localization,
+                                                  @RequestParam(value = "profilePicture", required = false) MultipartFile profilePicture) {
         var user = userRepository.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
-        if (dto.professionalName() != null) {
-            user.setProfessionalName(dto.professionalName());
+        if (professionalName != null) {
+            user.setProfessionalName(professionalName);
         }
-        if (dto.category() != null) {
-            user.setCategory(dto.category());
+        if (category != null) {
+            user.setCategory(category);
         }
-        if (dto.aboutMe() != null) {
-            user.setAboutMe(dto.aboutMe());
+        if (aboutMe != null) {
+            user.setAboutMe(aboutMe);
         }
-        if (dto.socialMedia() != null) {
-            user.setSocialMedia(dto.socialMedia());
+        if (socialMedia != null) {
+            user.setSocialMedia(socialMedia);
         }
-        if (dto.localization() != null) {
-            user.setLocalization(dto.localization());
+        if (localization != null) {
+            user.setLocalization(localization);
         }
-
-        if (dto.profilePicture() != null) {
-            user.setProfilePicture(dto.profilePicture());
+        if (profilePicture != null && !profilePicture.isEmpty() && isValidImageType(profilePicture.getContentType())) {
+            user.setProfilePicture(storeFileService.uploadFile(profilePicture, user.getUsername() + "/profile", UUID.randomUUID().toString()));
         }
 
         userRepository.save(user);
@@ -295,7 +314,28 @@ public class UserController {
         }
 
         // Deletar todas as publicações relacionadas ao usuário
+        var publications = publicationRepository.findByUser(user);
+        for (Publication publication : publications) {
+            // Delete images from S3
+            if (publication.getImageUrl1() != null && !publication.getImageUrl1().isEmpty()) {
+                storeFileService.deleteFile(publication.getImageUrl1());
+            }
+            if (publication.getImageUrl2() != null && !publication.getImageUrl2().isEmpty()) {
+                storeFileService.deleteFile(publication.getImageUrl2());
+            }
+            if (publication.getImageUrl3() != null && !publication.getImageUrl3().isEmpty()) {
+                storeFileService.deleteFile(publication.getImageUrl3());
+            }
+            if (publication.getImageUrl4() != null && !publication.getImageUrl4().isEmpty()) {
+                storeFileService.deleteFile(publication.getImageUrl4());
+            }
+        }
         publicationRepository.deleteByUser(user);
+
+        // Deletar a imagem do perfil do usuário do S3
+        if (user.getProfilePicture() != null && !user.getProfilePicture().isEmpty()) {
+            storeFileService.deleteFile(user.getProfilePicture());
+        }
 
         // Remover as associações na tabela intermediária tb_users_roles
         user.getRoles().clear();

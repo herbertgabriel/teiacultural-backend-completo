@@ -1,9 +1,11 @@
 package com.proa.teiacultural.controller.dto.PublicationDto;
 
+import org.springframework.web.multipart.MultipartFile;
+
 public record CreatePublicationDto(
         String content,
-        String imageUrl1,
-        String imageUrl2,
-        String imageUrl3,
-        String imageUrl4
+        MultipartFile imageUrl1,
+        MultipartFile imageUrl2,
+        MultipartFile imageUrl3,
+        MultipartFile imageUrl4
 ) {}
